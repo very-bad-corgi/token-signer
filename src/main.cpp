@@ -66,14 +66,12 @@ int main() {
         std::cerr << "Failed to load config from " << configPath << std::endl;
         return 1;
     }
-    std::string certPath = resolveCertPath(config.cert_path);
     std::cout << "Config loaded: port=" << config.port
-              << ", cert=" << certPath
               << ", keys=" << config.keys.size() << std::endl;
 
     httplib::Server svr;
 
-    svr.Post("/cms", [&config, &certPath](const httplib::Request& req, httplib::Response& res) {
+    svr.Post("/cms", [&config](const httplib::Request& req, httplib::Response& res) {
         res.set_header("Content-Type", "application/json; charset=utf-8");
 
         json body;
@@ -92,12 +90,14 @@ int main() {
             return;
         }
 
-        std::string pin = config.getPinForKey(keyId);
-        if (pin.empty()) {
+        const KeyEntry* key = config.getKeyEntry(keyId);
+        if (!key || key->cert_path.empty()) {
             res.status = 400;
-            res.set_content(json{{"error", "Unknown key_id or no pin in config"}}.dump(), "application/json");
+            res.set_content(json{{"error", "Unknown key_id or key has no cert_path in config"}}.dump(), "application/json");
             return;
         }
+
+        std::string certPath = resolveCertPath(key->cert_path);
 
         std::vector<unsigned char> dataToSign;
         if (body.contains("data_b64")) {
@@ -128,7 +128,7 @@ int main() {
             dataToSign,
             config.provider_name,
             keyId,
-            pin,
+            key->pin,
             certPath);
 
         if (cmsVec.empty()) {

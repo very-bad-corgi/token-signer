@@ -3,15 +3,14 @@
 server:
   port: 8080
 
-# Путь к сертификату (для включения в CMS)
-cert_path: "etc/cert.crt"
-
 # Имя провайдера CSP (по умолчанию Avest CSP Bel Pro)
 provider_name: "Avest CSP Bel Pro"
 
-# Список личных ключей / контейнеров с паролями
+# Список личных ключей: у каждого ключа свой сертификат и пароль
 keys:
   - key_id: "Zysko_22_01_26_20_23"
     pin: "Ee17011985"
+    cert_path: "etc/cert.crt"
   # - key_id: "AnotherKey"
   #   pin: "secret"
+  #   cert_path: "etc/another-cert.crt"
