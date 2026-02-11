@@ -3,6 +3,12 @@
 server:
   port: 8080
 
+# Логирование: файл, ротация по достижении числа строк, кол-во хранимых файлов
+logging:
+  log_file: "logs/service.log"
+  log_max_lines: 10000
+  log_max_files: 3
+
 # Имя провайдера CSP (по умолчанию Avest CSP Bel Pro)
 provider_name: "Avest CSP Bel Pro"
 

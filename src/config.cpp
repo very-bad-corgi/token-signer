@@ -13,6 +13,13 @@ bool AppConfig::loadFromFile(const std::string& path) {
         if (root["provider_name"])
             provider_name = root["provider_name"].as<std::string>();
 
+        if (root["logging"]) {
+            const auto& log = root["logging"];
+            if (log["log_file"])      log_file = log["log_file"].as<std::string>();
+            if (log["log_max_lines"]) log_max_lines = log["log_max_lines"].as<int>(log_max_lines);
+            if (log["log_max_files"]) log_max_files = log["log_max_files"].as<int>(log_max_files);
+        }
+
         if (root["keys"] && root["keys"].IsSequence()) {
             keys.clear();
             for (const auto& k : root["keys"]) {

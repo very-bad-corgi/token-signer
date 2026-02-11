@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.14)
-project(CmsCreator LANGUAGES CXX)
+project(token-signer LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -36,6 +36,16 @@ FetchContent_Declare(base64
 )
 FetchContent_Populate(base64)
 
+# spdlog
+FetchContent_Declare(spdlog
+  GIT_REPOSITORY https://github.com/gabime/spdlog.git
+  GIT_TAG        v1.13.0
+)
+set(SPDLOG_BUILD_SHARED OFF CACHE BOOL "" FORCE)
+set(SPDLOG_BUILD_EXAMPLE OFF CACHE BOOL "" FORCE)
+set(SPDLOG_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+FetchContent_MakeAvailable(spdlog)
+
 include_directories(src src/include src/avpass)
 
 file(GLOB_RECURSE SOURCE_FILES "src/*.cpp")
@@ -51,6 +61,7 @@ target_include_directories(${PROJECT_NAME} PRIVATE
 target_link_libraries(${PROJECT_NAME} PRIVATE
   nlohmann_json::nlohmann_json
   yaml-cpp
+  spdlog::spdlog
 )
 
 if(WIN32)
@@ -61,3 +72,43 @@ if(WIN32)
 elseif(UNIX)
   target_link_libraries(${PROJECT_NAME} PRIVATE dl)
 endif()
+
+# --- Install & CPack (инсталлятор) ---
+include(GNUInstallDirs)
+
+install(TARGETS ${PROJECT_NAME}
+  RUNTIME DESTINATION bin
+)
+
+install(FILES "${CMAKE_SOURCE_DIR}/config.yaml"
+  DESTINATION bin
+  RENAME config.yaml
+)
+
+# Пустой каталог logs и файл service.log — в комплекте, не нужно создавать при первом запуске
+install(DIRECTORY "${CMAKE_SOURCE_DIR}/logs"
+  DESTINATION bin
+)
+
+# Пример конфига в документации (опционально)
+# install(DIRECTORY etc/ DESTINATION etc OPTIONAL)
+
+# Переменные CPack — обязательно ДО include(CPack), иначе кэш не обновится
+set(CPACK_PACKAGE_NAME "token-signer")
+set(CPACK_PACKAGE_VENDOR "ArtopiasLab")
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Микросервис подписания CMS (REST API)")
+set(CPACK_PACKAGE_VERSION "0.1.1")
+if(WIN32)
+  set(CPACK_GENERATOR "NSIS;ZIP")
+  set(CPACK_PACKAGE_FILE_NAME "${CPACK_PACKAGE_NAME}-${CPACK_PACKAGE_VERSION}-win64")
+  set(CPACK_NSIS_MODIFY_PATH ON)
+  set(CPACK_NSIS_DISPLAY_NAME "Token Signer CMS Service")
+  set(CPACK_NSIS_INSTALL_ROOT "$PROGRAMFILES")
+  # Двойной слэш: в NSIS \t = таб, поэтому нужен \\ чтобы получить один \ в пути
+set(CPACK_PACKAGE_INSTALL_DIRECTORY "ArtopiasLab\\\\token-signer-${CPACK_PACKAGE_VERSION}")
+else()
+  set(CPACK_GENERATOR "TGZ")
+  set(CPACK_PACKAGE_FILE_NAME "${CPACK_PACKAGE_NAME}-${CPACK_PACKAGE_VERSION}-linux")
+endif()
+
+include(CPack)
